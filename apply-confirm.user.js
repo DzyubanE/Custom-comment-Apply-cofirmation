@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Apply Button Confirmation
 // @namespace    http://tampermonkey.net/
-// @version      2026-04-14
-// @description  Перехват кнопки Apply с подтверждением выбранного статуса
+// @version      2.1
+// @description  Двойное подтверждение + шаблоны комментариев
 // @author       You
 // @match        https://th-managment.com/en/admin/backoffice/paymentsupport
 // @match        https://my-managment.com/en/admin/backoffice/paymentsupport
@@ -21,7 +21,7 @@
     '231 Adjusted the amount (Deposit) (M)'
   ];
 
-  const STATUSES_WITH_COMMENTS = ['209', '207', '210', '216'];
+  const STATUSES_WITH_COMMENTS = ['209', '207', '210', '216', '243'];
 
   const COMMENTS_209 = [
     { label: 'Корректировка даты', full: 'Sir, please check the date and time. They have been corrected.', hasInput: false },
@@ -36,13 +36,15 @@
     { label: 'Выше лимита', full: 'Sir, the amount is above the limit, please refund the money to the user and provide a screenshot.' }
   ];
 
+  const COMMENT_243_TEMPLATE = (val) => `Credited to another account - ${val || '(номер транзакции)'}`;
+
   function withPrefix(text) {
     if (!text) return text;
     return '// ' + text;
   }
 
   const css = `
-     .--cmt-trigger-wrap {
+    .--cmt-trigger-wrap {
       display: block;
       width: 100%;
       margin: 8px 0 6px 0;
@@ -388,7 +390,6 @@
     if (el) el.remove();
   }
 
-  // Единый блок превью — один стиль для всех статусов
   function makePreviewWrap(initialText) {
     const wrap = mk('div', 'preview-wrap');
     const label = mk('div', 'preview-label'); label.textContent = 'Итоговый комментарий';
@@ -427,7 +428,6 @@
       let selectedIdx = null;
       let txnInputEl = null;
       const { wrap: pvWrap, box: pvBox } = makePreviewWrap('');
-      pvWrap.style.marginTop = '12px';
 
       COMMENTS_209.forEach((item, i) => {
         const optBtn = mk('button', 'comment-option');
@@ -488,7 +488,6 @@
       const optsWrap = mk('div', 'comment-options');
       let selectedFull = null;
       const { wrap: pvWrap, box: pvBox } = makePreviewWrap('');
-      pvWrap.style.marginTop = '12px';
 
       COMMENTS_207.forEach((item) => {
         const optBtn = mk('button', 'comment-option');
@@ -597,6 +596,24 @@
       update216();
 
       getComment = () => pvBox.textContent.trim();
+    }
+
+    // ── 243 ──
+    if (status && status.startsWith('243')) {
+      const lbl = mk('div', 'section-label'); lbl.textContent = 'Номер транзакции';
+      modal.appendChild(lbl);
+
+      const inp = mk('input', 'field-inp');
+      inp.type = 'text'; inp.placeholder = 'Номер транзакции';
+      inp.style.marginBottom = '4px';
+
+      const { wrap: pvWrap, box: pvBox } = makePreviewWrap(withPrefix(COMMENT_243_TEMPLATE('')));
+      inp.addEventListener('input', () => {
+        pvBox.textContent = withPrefix(COMMENT_243_TEMPLATE(inp.value.trim()));
+      });
+
+      modal.appendChild(inp); modal.appendChild(pvWrap);
+      getComment = () => withPrefix(COMMENT_243_TEMPLATE(inp.value.trim()));
     }
 
     // Кнопки
