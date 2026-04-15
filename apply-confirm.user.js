@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Apply Button Confirmation
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2026-04-15
 // @description  Двойное подтверждение + шаблоны комментариев
 // @author       You
 // @match        https://th-managment.com/en/admin/backoffice/paymentsupport
