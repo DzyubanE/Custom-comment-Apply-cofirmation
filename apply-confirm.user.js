@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Apply Button Confirmation
 // @namespace    http://tampermonkey.net/
-// @version      2026-04-15
+// @version      2026-04-16
 // @description  Двойное подтверждение + шаблоны комментариев
 // @author       You
 // @match        https://th-managment.com/en/admin/backoffice/paymentsupport
@@ -370,7 +370,7 @@
     textarea.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  function isTargetApplyButton(el) {
+ function isTargetApplyButton(el) {
     const btn = el.closest('button');
     if (!btn) return null;
     const label = btn.querySelector('.btn-label');
@@ -380,6 +380,14 @@
     if (!inputGroup || inputGroup.classList.contains('btn-block')) return null;
     const filterBlock = inputGroup.parentElement;
     if (!filterBlock || !filterBlock.classList.contains('filter') || !filterBlock.classList.contains('btn-block')) return null;
+
+    // Исключаем попапы не связанные с тикетами
+    const modalContent = btn.closest('.modal_content');
+    if (!modalContent) return null;
+    const modalTitle = modalContent.querySelector('.title');
+    if (!modalTitle) return null;
+    if (!modalTitle.textContent.trim().startsWith('Change ticket')) return null;
+
     return btn;
   }
 
